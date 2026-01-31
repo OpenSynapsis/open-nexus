@@ -1,0 +1,20 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [0.0.1] - 2026-01-31
+
+### Added
+- Initial project structure
+- Workspace setup with `onx` crate
+- MIT OR Apache-2.0 dual licensing
+- Placeholder binary for crate name reservation
+
+### Notes
+This is a name reservation release. Core functionality will be implemented
+in v0.1.0.

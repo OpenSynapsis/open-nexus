@@ -1,0 +1,18 @@
+[package]
+name = "open-nexus"          # Crate name on crates.io
+version = "0.0.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Fast flow-indexed network analysis toolkit"
+repository = "https://github.com/OpenSynapsis/open-nexus"
+keywords = ["network", "packet-capture", "pcap", "flow-analysis"]
+categories = ["network-programming", "command-line-utilities"]
+readme = "../README.md"
+
+[lib]
+name = "onx"                 # Library name (short and clean!)
+path = "src/lib.rs"
+
+[[bin]]
+name = "onx"                 # Binary name (matches library)
+path = "src/main.rs"
