@@ -1,7 +1,7 @@
 # Open Nexus (onx)
 
-[![Crates.io](https://img.shields.io/crates/v/onx.svg)](https://crates.io/crates/onx)
-[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/yourusername/open-nexus#license)
+[![Crates.io](https://img.shields.io/crates/v/onx.svg)](https://crates.io/crates/open-nexus)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/OpenSynapsis/open-nexus#license)
 
 > Flow-based network packet capture and analysis
 
