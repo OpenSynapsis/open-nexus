@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.0.2] - 2026-02-15
+
+### Added
+  - PCAP and PCAPNG file reading
+  - `NxPacket` struct for unified packet representation
+  - `PacketSource` trait for capture abstraction
+  - Basic CLI with `read` command
+  - Integration tests with sample PCAP files
+  
+  ### Dependencies
+  - Added pcap-file 3.0.0-rc1
+  - Added thiserror 2.0.18
+  - Added clap 4.5
+  - Added time 0.3
+
 ## [0.0.1] - 2026-01-31
 
 ### Added

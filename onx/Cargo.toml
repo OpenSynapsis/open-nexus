@@ -1,6 +1,6 @@
 [package]
 name = "open-nexus"          # Crate name on crates.io
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Fast flow-indexed network analysis toolkit"
@@ -16,3 +16,16 @@ path = "src/lib.rs"
 [[bin]]
 name = "onx"                 # Binary name (matches library)
 path = "src/main.rs"
+
+[dependencies]
+pcap-file = "3.0.0-rc1"
+thiserror = "2.0.18"
+clap = { version = "4.5", features = ["derive"] }
+time = { version = "0.3", features = ["formatting", "macros"] }
+
+[dev-dependencies]
+ureq = { version = "2.9", features = ["json"] }
+sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+fs4 = "0.7"

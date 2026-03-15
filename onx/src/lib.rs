@@ -15,37 +15,13 @@
 //! core features are being implemented.
 
 /// Core flow analysis module
-pub mod core {
-
-    /// Represents a network flow (5-tuple)
-    ///
-    /// A flow is identified by source IP, destination IP, source port,
-    /// destination port, and protocol.
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub struct Flow {
-        // Will be implemented in v0.0.2
-    }
-
-    pub fn hello_onx() {
-        println!("Open Nexus v0.0.1");
-        println!("⚠️  Under active development");
-        println!();
-        println!("This is a placeholder release to reserve the crate name.");
-        println!("Full functionality coming in v0.1.0.");
-        println!();
-        println!("Repository: https://github.com/OpenSynapsis/open-nexus");
-    }
-}
+pub mod core;
 
 /// Packet capture module
-pub mod capture {
-
-    // Placeholder for future implementation
-}
+pub mod capture;
 
 /// Export functionality module
 pub mod export {
-
     // Placeholder for future implementation
 }
 

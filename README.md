@@ -1,11 +1,11 @@
 # Open Nexus (onx)
 
-[![Crates.io](https://img.shields.io/crates/v/onx.svg)](https://crates.io/crates/open-nexus)
+[![Crates.io](https://img.shields.io/badge/crates.io-open--nexus-yellow)](https://crates.io/crates/open-nexus)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/OpenSynapsis/open-nexus#license)
 
 > Flow-based network packet capture and analysis
 
-⚠️ **Status**: Early development (v0.0.1) - Name reservation release
+⚠️ **Status**: Early development (v0.0.2) - Basic PCAP reading and CLI. API subject to change.
 
 ## What is Open Nexus?
 
@@ -31,6 +31,15 @@ This is an early development release. Expected milestones:
 ## Installation
 ```bash
 cargo install open-nexus
+```
+
+## Usage
+```bash
+# Read packets from a PCAP file
+onx read path/to/capture.pcap
+# Show help
+onx --help
+onx read --help
 ```
 
 ## License

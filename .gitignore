@@ -1,5 +1,12 @@
+
+# Ignore build artifacts and other generated files
 /target
 Cargo.lock
 **/*.rs.bk
 *.pdb
 .DS_Store
+
+# Ignore Test data
+tests/data/*.pcap
+tests/data/*.pcapng
+tests/data/*.lock
