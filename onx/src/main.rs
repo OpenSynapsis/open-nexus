@@ -67,28 +67,36 @@ fn read_pcap(path: &str, verbose: bool) {
 
     // Read packets one at a time: only the statistics and the first few
     // packets are kept in memory, so captures of any size can be read.
+    // Reading stops at the first error, keeping what was read before it.
     println!("Parsing packets...");
     let mut stats = CaptureStats::new();
     let mut preview = Vec::with_capacity(PREVIEW_COUNT);
+    let mut read_error = None;
 
     for result in pkt_iter {
-        let packet = match result {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("✗ Error reading packets: {}", e);
-                process::exit(1);
+        match result {
+            Ok(packet) => {
+                stats.add(&packet);
+                if preview.len() < PREVIEW_COUNT {
+                    preview.push(packet);
+                }
             }
-        };
-
-        stats.add(&packet);
-        if preview.len() < PREVIEW_COUNT {
-            preview.push(packet);
+            Err(e) => {
+                read_error = Some(e);
+                break;
+            }
         }
     }
 
     // Display summary
     println!();
-    println!("✓ Successfully read {} packets", stats.packet_count());
+    match &read_error {
+        None => println!("✓ Successfully read {} packets", stats.packet_count()),
+        Some(e) => {
+            println!("⚠ Read {} packets before an error", stats.packet_count());
+            eprintln!("✗ Error reading packet {}: {}", stats.packet_count() + 1, e);
+        }
+    }
     println!();
 
     println!("Statistics:");
@@ -112,5 +120,10 @@ fn read_pcap(path: &str, verbose: bool) {
 
     if stats.packet_count() > PREVIEW_COUNT {
         println!("  ... and {} more", stats.packet_count() - PREVIEW_COUNT);
+    }
+
+    // Partial read: the summary above is still useful, but signal the failure
+    if read_error.is_some() {
+        process::exit(1);
     }
 }

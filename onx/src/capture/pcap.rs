@@ -14,7 +14,7 @@ use time::OffsetDateTime;
 
 use std::{
     fs::File,
-    io::{BufReader, Read},
+    io::{self, BufReader, Read},
     path::Path,
 };
 
@@ -104,7 +104,7 @@ impl<R: Read> Iterator for PcapPacketIter<R> {
 
                 Some(Ok(packet))
             }
-            Some(Err(e)) => Some(Err(PcapError::ReadError(e))),
+            Some(Err(e)) => Some(Err(PcapError::from_reader(e))),
             None => None,
         }
     }
@@ -124,6 +124,24 @@ pub enum PcapError {
 
     #[error("Missing interface block for interface id {0}")]
     MissingInterface(u32),
+
+    #[error("File is truncated: it ends in the middle of a packet")]
+    Truncated,
+}
+
+impl PcapError {
+    /// Convert an error from the `pcap-file` reader, recognizing truncated files
+    fn from_reader(e: pcap_file::PcapError) -> Self {
+        match e {
+            pcap_file::PcapError::IncompleteBuffer => PcapError::Truncated,
+            pcap_file::PcapError::IoError(ref io_error)
+                if io_error.kind() == io::ErrorKind::UnexpectedEof =>
+            {
+                PcapError::Truncated
+            }
+            other => PcapError::ReadError(other),
+        }
+    }
 }
 
 // ============================================================================
@@ -208,7 +226,7 @@ impl<R: Read> Iterator for PcapNgPacketIter<R> {
                     return Some(Ok(packet));
                 }
                 Ok(_) => continue, // Skip non-packet blocks
-                Err(e) => return Some(Err(PcapError::ReadError(e))),
+                Err(e) => return Some(Err(PcapError::from_reader(e))),
             }
         }
     }
@@ -264,5 +282,64 @@ pub fn read_capture_file<P: AsRef<Path>>(
         PcapNgSource::from_file(path).map(AnyPacketSource::PcapNg)
     } else {
         Err(PcapError::UnsupportedFormat)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Build a small little-endian PCAP file holding `packet_count` packets of 4 bytes each
+    fn pcap_bytes(packet_count: usize) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Global header: magic, version 2.4, timezone, sigfigs, snaplen, link type (Ethernet)
+        bytes.extend_from_slice(&0xa1b2c3d4u32.to_le_bytes());
+        bytes.extend_from_slice(&2u16.to_le_bytes());
+        bytes.extend_from_slice(&4u16.to_le_bytes());
+        for field in [0u32, 0, 65535, 1] {
+            bytes.extend_from_slice(&field.to_le_bytes());
+        }
+
+        for _ in 0..packet_count {
+            // Packet header: seconds, microseconds, captured length, original length
+            for field in [0u32, 0, 4, 4] {
+                bytes.extend_from_slice(&field.to_le_bytes());
+            }
+            bytes.extend_from_slice(&[0xaa; 4]);
+        }
+
+        bytes
+    }
+
+    #[test]
+    fn reads_complete_file() {
+        let bytes = pcap_bytes(3);
+        let packets: Vec<_> = PcapSource::new(&bytes[..]).unwrap().packets().collect();
+
+        assert_eq!(packets.len(), 3);
+        assert!(packets.iter().all(|p| p.is_ok()));
+    }
+
+    #[test]
+    fn truncated_in_packet_data() {
+        let bytes = pcap_bytes(3);
+        let truncated = &bytes[..bytes.len() - 2]; // cut the last packet's data in half
+        let mut packets = PcapSource::new(truncated).unwrap().packets();
+
+        assert!(packets.next().unwrap().is_ok());
+        assert!(packets.next().unwrap().is_ok());
+        assert!(matches!(packets.next(), Some(Err(PcapError::Truncated))));
+    }
+
+    #[test]
+    fn truncated_in_packet_header() {
+        let bytes = pcap_bytes(3);
+        let truncated = &bytes[..bytes.len() - 10]; // cut inside the last packet's header
+        let mut packets = PcapSource::new(truncated).unwrap().packets();
+
+        assert!(packets.next().unwrap().is_ok());
+        assert!(packets.next().unwrap().is_ok());
+        assert!(matches!(packets.next(), Some(Err(PcapError::Truncated))));
     }
 }
