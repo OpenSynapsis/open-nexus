@@ -6,8 +6,11 @@ use clap::{Parser, Subcommand};
 
 use onx::{
     capture::{read_capture_file, PacketSource},
-    core::packet::NxPacketFormat,
+    core::{packet::NxPacketFormat, stats::CaptureStats},
 };
+
+/// Number of packets shown in the preview after the statistics
+const PREVIEW_COUNT: usize = 5;
 
 #[derive(Parser)]
 #[command(name = "onx")]
@@ -62,49 +65,52 @@ fn read_pcap(path: &str, verbose: bool) {
         }
     };
 
-    // Read all packets
+    // Read packets one at a time: only the statistics and the first few
+    // packets are kept in memory, so captures of any size can be read.
     println!("Parsing packets...");
-    let packets: Vec<_> = match pkt_iter.collect::<Result<Vec<_>, _>>() {
-        Ok(p) => p,
-        Err(e) => {
-            eprintln!("✗ Error reading packets: {}", e);
-            process::exit(1);
+    let mut stats = CaptureStats::new();
+    let mut preview = Vec::with_capacity(PREVIEW_COUNT);
+
+    for result in pkt_iter {
+        let packet = match result {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("✗ Error reading packets: {}", e);
+                process::exit(1);
+            }
+        };
+
+        stats.add(&packet);
+        if preview.len() < PREVIEW_COUNT {
+            preview.push(packet);
         }
-    };
+    }
 
     // Display summary
     println!();
-    println!("✓ Successfully read {} packets", packets.len());
+    println!("✓ Successfully read {} packets", stats.packet_count());
     println!();
 
-    // Calculate statistics
-    let total_bytes: usize = packets.iter().map(|p| p.captured_len()).sum();
-    let avg_size = if !packets.is_empty() {
-        total_bytes / packets.len()
-    } else {
-        0
-    };
-
     println!("Statistics:");
-    println!("  Total packets:  {}", packets.len());
-    println!("  Total bytes:    {}", total_bytes);
-    println!("  Average size:   {} bytes", avg_size);
+    println!("  Total packets:  {}", stats.packet_count());
+    println!("  Total bytes:    {}", stats.total_bytes());
+    println!("  Average size:   {} bytes", stats.average_size());
 
-    if let Some(first) = packets.first() {
-        println!("  First packet:   {}", first.timestamp());
+    if let Some(first) = stats.first_timestamp() {
+        println!("  First packet:   {}", first);
     }
-    if let Some(last) = packets.last() {
-        println!("  Last packet:    {}", last.timestamp());
+    if let Some(last) = stats.last_timestamp() {
+        println!("  Last packet:    {}", last);
     }
 
     // Show first few packets
     println!();
-    println!("First 5 packets:");
-    for pkt in packets.iter().take(5) {
+    println!("First {} packets:", PREVIEW_COUNT);
+    for pkt in &preview {
         println!("{}", pkt.display(NxPacketFormat::OneLine));
     }
 
-    if packets.len() > 5 {
-        println!("  ... and {} more", packets.len() - 5);
+    if stats.packet_count() > PREVIEW_COUNT {
+        println!("  ... and {} more", stats.packet_count() - PREVIEW_COUNT);
     }
 }
