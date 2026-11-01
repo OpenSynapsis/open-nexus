@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     reported as truncated instead of a generic read error
   - `PacketId` (`core::packet`): identity of a packet, its position in the
     capture numbered from 1 like Wireshark frame numbers; `RawPacket::id()`
+  - `protocols` module, with the protocol number types `EtherType` and
+    `IpProtocol` (known values as constants, e.g. `IpProtocol::TCP`)
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory

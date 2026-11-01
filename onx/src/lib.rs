@@ -20,6 +20,9 @@ pub mod core;
 /// Packet capture module
 pub mod capture;
 
+/// Protocol decoding module
+pub mod protocols;
+
 /// Export functionality module
 pub mod export {
     // Placeholder for future implementation
