@@ -4,4 +4,4 @@ pub mod packet;
 pub mod stats;
 
 // Re-export commonly used types
-pub use packet::NxPacket;
+pub use packet::RawPacket;

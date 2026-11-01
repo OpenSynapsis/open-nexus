@@ -2,7 +2,7 @@
 
 use time::OffsetDateTime;
 
-use crate::core::packet::NxPacket;
+use crate::core::packet::RawPacket;
 
 /// Summary statistics of a capture, updated one packet at a time.
 ///
@@ -12,12 +12,12 @@ use crate::core::packet::NxPacket;
 /// # Example
 ///
 /// ```
-/// use onx::core::packet::{LinkType, NxPacket};
+/// use onx::core::packet::{LinkType, RawPacket};
 /// use onx::core::stats::CaptureStats;
 /// use time::OffsetDateTime;
 ///
 /// let mut stats = CaptureStats::new();
-/// let packet = NxPacket::new(OffsetDateTime::now_utc(), vec![0u8; 64], 64, LinkType::Ethernet);
+/// let packet = RawPacket::new(OffsetDateTime::now_utc(), vec![0u8; 64], 64, LinkType::Ethernet);
 /// stats.add(&packet);
 ///
 /// assert_eq!(stats.packet_count(), 1);
@@ -45,7 +45,7 @@ impl CaptureStats {
     }
 
     /// Add one packet to the statistics
-    pub fn add(&mut self, packet: &NxPacket) {
+    pub fn add(&mut self, packet: &RawPacket) {
         self.packet_count += 1;
         self.total_bytes += packet.captured_len();
 
@@ -90,9 +90,9 @@ mod tests {
     use super::*;
     use crate::core::packet::LinkType;
 
-    fn packet_at(unix_seconds: i64, size: usize) -> NxPacket {
+    fn packet_at(unix_seconds: i64, size: usize) -> RawPacket {
         let timestamp = OffsetDateTime::from_unix_timestamp(unix_seconds).unwrap();
-        NxPacket::new(timestamp, vec![0u8; size], size, LinkType::Ethernet)
+        RawPacket::new(timestamp, vec![0u8; size], size, LinkType::Ethernet)
     }
 
     #[test]

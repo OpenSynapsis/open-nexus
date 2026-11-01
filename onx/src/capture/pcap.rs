@@ -2,7 +2,7 @@
 
 use crate::{
     capture::source::PacketSource,
-    core::packet::{LinkType, NxPacket},
+    core::packet::{LinkType, RawPacket},
 };
 
 use pcap_file::{
@@ -85,7 +85,7 @@ pub struct PcapPacketIter<R: Read> {
 }
 
 impl<R: Read> Iterator for PcapPacketIter<R> {
-    type Item = Result<NxPacket, PcapError>;
+    type Item = Result<RawPacket, PcapError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.reader.next_packet() {
@@ -95,7 +95,7 @@ impl<R: Read> Iterator for PcapPacketIter<R> {
                 )
                 .unwrap_or(OffsetDateTime::UNIX_EPOCH);
 
-                let packet = NxPacket::new(
+                let packet = RawPacket::new(
                     timestamp,
                     pkt.data.to_vec(),
                     pkt.orig_len as usize,
@@ -201,7 +201,7 @@ pub struct PcapNgPacketIter<R: Read> {
 }
 
 impl<R: Read> Iterator for PcapNgPacketIter<R> {
-    type Item = Result<NxPacket, PcapError>;
+    type Item = Result<RawPacket, PcapError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -217,7 +217,7 @@ impl<R: Read> Iterator for PcapNgPacketIter<R> {
                         i128::try_from(epb.timestamp.as_nanos()).unwrap_or(0),
                     )
                     .unwrap_or(OffsetDateTime::UNIX_EPOCH);
-                    let packet = NxPacket::new(
+                    let packet = RawPacket::new(
                         timestamp,
                         epb.data.to_vec(),
                         epb.original_len as usize,
@@ -243,7 +243,7 @@ pub enum AnyPacketIter<R: Read> {
 }
 
 impl<R: Read> Iterator for AnyPacketIter<R> {
-    type Item = Result<NxPacket, PcapError>;
+    type Item = Result<RawPacket, PcapError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {

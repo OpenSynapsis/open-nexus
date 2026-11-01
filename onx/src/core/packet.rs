@@ -3,19 +3,22 @@
 use std::fmt;
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
-/// A network packet in Open Nexus format
+/// A captured packet as raw bytes, as read from a capture source.
+///
+/// This is the input of protocol decoding, and the way back to the original
+/// bytes (hex dumps, payload inspection, writing captures).
 ///
 /// # Example
 ///
 /// ```
-/// use onx::core::packet::{NxPacket, LinkType, NxPacketFormat};
+/// use onx::core::packet::{RawPacket, LinkType, DisplayFormat};
 /// use time::OffsetDateTime;
 ///
-/// let packet = NxPacket::new(OffsetDateTime::now_utc(), vec![0u8; 64], 64, LinkType::Ethernet);
-/// println!("{}", packet.display(NxPacketFormat::OneLine));
+/// let packet = RawPacket::new(OffsetDateTime::now_utc(), vec![0u8; 64], 64, LinkType::Ethernet);
+/// println!("{}", packet.display(DisplayFormat::OneLine));
 /// ```
 #[derive(Debug, Clone)]
-pub struct NxPacket {
+pub struct RawPacket {
     /// Timestamp when packet was captured
     timestamp: OffsetDateTime,
 
@@ -31,7 +34,7 @@ pub struct NxPacket {
     link_type: LinkType,
 }
 
-impl NxPacket {
+impl RawPacket {
     /// Create a new packet
     pub fn new(
         timestamp: OffsetDateTime,
@@ -63,13 +66,13 @@ impl NxPacket {
     }
 
     /// Returns the number of bytes actually stored in this packet.
-    /// This may be less than [`NxPacket::original_len()`] if the capture tool applied a snaplen limit.
+    /// This may be less than [`RawPacket::original_len()`] if the capture tool applied a snaplen limit.
     pub fn captured_len(&self) -> usize {
         self.data.len()
     }
 
     /// Returns the original length of the packet as it was on the wire.
-    /// This may be greater than [`NxPacket::captured_len()`] if the packet was truncated during capture
+    /// This may be greater than [`RawPacket::captured_len()`] if the packet was truncated during capture
     pub fn original_len(&self) -> usize {
         self.original_len
     }
@@ -120,10 +123,10 @@ impl LinkType {
 // =================================================
 
 /// Output format for displaying packets
-/// This is used by the `NxPacketDisplay` wrapper to determine how to format the packet for display.
+/// This is used by the `RawPacketDisplay` wrapper to determine how to format the packet for display.
 // The enums are intentionally non-exhaustive to allow adding new formats in the future without breaking existing code.
 #[non_exhaustive]
-pub enum NxPacketFormat {
+pub enum DisplayFormat {
     /// One line summary (timestamp, link type, length).
     /// Example:
     /// ```ignore
@@ -149,32 +152,32 @@ pub enum NxPacketFormat {
     HexDump,
 }
 
-pub struct NxPacketDisplay<'a> {
-    packet: &'a NxPacket,
-    format: NxPacketFormat,
+pub struct RawPacketDisplay<'a> {
+    packet: &'a RawPacket,
+    format: DisplayFormat,
 }
 
-impl<'a> fmt::Display for NxPacketDisplay<'a> {
+impl<'a> fmt::Display for RawPacketDisplay<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.format {
-            NxPacketFormat::OneLine => write_one_line(f, self.packet),
-            NxPacketFormat::Verbose => write_verbose(f, self.packet),
-            NxPacketFormat::HexDump => write_hex_dump(f, self.packet),
+            DisplayFormat::OneLine => write_one_line(f, self.packet),
+            DisplayFormat::Verbose => write_verbose(f, self.packet),
+            DisplayFormat::HexDump => write_hex_dump(f, self.packet),
         }
     }
 }
 
-impl NxPacket {
+impl RawPacket {
     /// Format this packet for display using the specified format
-    pub fn display(&self, format: NxPacketFormat) -> NxPacketDisplay<'_> {
-        NxPacketDisplay {
+    pub fn display(&self, format: DisplayFormat) -> RawPacketDisplay<'_> {
+        RawPacketDisplay {
             packet: self,
             format,
         }
     }
 }
 
-fn write_one_line(f: &mut fmt::Formatter<'_>, packet: &NxPacket) -> fmt::Result {
+fn write_one_line(f: &mut fmt::Formatter<'_>, packet: &RawPacket) -> fmt::Result {
     let ts = packet.timestamp.format(&Rfc3339).map_err(|_| fmt::Error)?;
     write!(
         f,
@@ -183,7 +186,7 @@ fn write_one_line(f: &mut fmt::Formatter<'_>, packet: &NxPacket) -> fmt::Result 
     )
 }
 
-fn write_verbose(f: &mut fmt::Formatter<'_>, packet: &NxPacket) -> fmt::Result {
+fn write_verbose(f: &mut fmt::Formatter<'_>, packet: &RawPacket) -> fmt::Result {
     let ts = packet.timestamp.format(&Rfc3339).map_err(|_| fmt::Error)?;
     writeln!(f, "Timestamp : {}", ts)?;
     writeln!(f, "Link type : {}", packet.link_type)?;
@@ -217,7 +220,7 @@ fn write_verbose(f: &mut fmt::Formatter<'_>, packet: &NxPacket) -> fmt::Result {
     }
 }
 
-fn write_hex_dump(f: &mut fmt::Formatter<'_>, packet: &NxPacket) -> fmt::Result {
+fn write_hex_dump(f: &mut fmt::Formatter<'_>, packet: &RawPacket) -> fmt::Result {
     const COLS: usize = 16; // bytes per row
 
     if packet.data.is_empty() {

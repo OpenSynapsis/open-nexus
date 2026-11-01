@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `onx read` keeps and reports the packets read before an error, then exits
     with status 1, instead of discarding them
 
+### Changed
+  - **Breaking:** `NxPacket` renamed to `RawPacket`, `NxPacketFormat` to `DisplayFormat`,
+    `NxPacketDisplay` to `RawPacketDisplay`. Library types no longer carry the `Nx`
+    prefix: modules namespace them (`onx::core::packet::RawPacket`).
+
 ## [0.0.2] - 2026-02-15
 
 ### Added

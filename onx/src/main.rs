@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 
 use onx::{
     capture::{read_capture_file, PacketSource},
-    core::{packet::NxPacketFormat, stats::CaptureStats},
+    core::{packet::DisplayFormat, stats::CaptureStats},
 };
 
 /// Number of packets shown in the preview after the statistics
@@ -115,7 +115,7 @@ fn read_pcap(path: &str, verbose: bool) {
     println!();
     println!("First {} packets:", PREVIEW_COUNT);
     for pkt in &preview {
-        println!("{}", pkt.display(NxPacketFormat::OneLine));
+        println!("{}", pkt.display(DisplayFormat::OneLine));
     }
 
     if stats.packet_count() > PREVIEW_COUNT {
