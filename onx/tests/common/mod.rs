@@ -28,9 +28,9 @@ pub fn ensure_test_file(manifest: &PcapFileManifest) -> Result<PathBuf, io::Erro
     let data_dir = PathBuf::from("../tests/data");
     fs::create_dir_all(&data_dir)?;
 
-    let filename = Path::new(&manifest.filename)
-        .file_name()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid filename in manifest"))?;
+    let filename = Path::new(&manifest.filename).file_name().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidInput, "Invalid filename in manifest")
+    })?;
     let target_path = data_dir.join(filename);
     let lock_path = target_path.with_extension("lock");
     let lock_file = File::create(&lock_path)?;
