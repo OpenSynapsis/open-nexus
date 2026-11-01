@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+  - `CaptureStats` (`core::stats`): running capture statistics (packet count,
+    bytes, first/last timestamp) computed in constant memory
+  - `PcapError::Truncated`: a capture that ends in the middle of a packet is
+    reported as truncated instead of a generic read error
+
+### Fixed
+  - `onx read` streams packets instead of loading the whole capture in memory
+    (1 GB capture: peak RSS 1.19 GB -> 10 MB)
+  - `onx read` keeps and reports the packets read before an error, then exits
+    with status 1, instead of discarding them
+
 ## [0.0.2] - 2026-02-15
 
 ### Added
