@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     bytes, first/last timestamp) computed in constant memory
   - `PcapError::Truncated`: a capture that ends in the middle of a packet is
     reported as truncated instead of a generic read error
+  - `PacketId` (`core::packet`): identity of a packet, its position in the
+    capture numbered from 1 like Wireshark frame numbers; `RawPacket::id()`
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - **Breaking:** `NxPacket` renamed to `RawPacket`, `NxPacketFormat` to `DisplayFormat`,
     `NxPacketDisplay` to `RawPacketDisplay`. Library types no longer carry the `Nx`
     prefix: modules namespace them (`onx::core::packet::RawPacket`).
+  - **Breaking:** `RawPacket::new` takes a `PacketId` as its first argument.
 
 ## [0.0.2] - 2026-02-15
 

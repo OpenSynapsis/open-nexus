@@ -1,7 +1,57 @@
 //! Core packet representation
 
-use std::fmt;
+use std::{fmt, num::NonZeroU64};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+
+/// Identity of a packet: its position in its capture source.
+///
+/// Packets are numbered from 1, like Wireshark frame numbers, so that
+/// packet 42 in `onx` is frame 42 in Wireshark.
+///
+/// The field is private so that the identity can later include the capture
+/// source (e.g. `source: SourceId`) without breaking users of this type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PacketId {
+    number: NonZeroU64,
+}
+
+impl PacketId {
+    /// Identity of the first packet of a capture
+    pub const FIRST: PacketId = PacketId {
+        number: NonZeroU64::MIN,
+    };
+
+    /// Create the identity of the packet at the given position (1-based)
+    pub fn new(number: NonZeroU64) -> Self {
+        Self { number }
+    }
+
+    /// Returns the position of the packet in its capture (1-based)
+    pub fn number(self) -> u64 {
+        self.number.get()
+    }
+
+    /// Returns the identity of the packet that follows this one
+    ///
+    /// # Panics
+    ///
+    /// Panics if this is the last representable identity (`u64::MAX`).
+    /// Not reachable by reading a capture: at 100 million packets per
+    /// second, numbering would overflow after about 5,800 years.
+    pub fn next(self) -> Self {
+        Self::new(
+            self.number
+                .checked_add(1)
+                .expect("a capture should contain fewer than u64::MAX packets"),
+        )
+    }
+}
+
+impl fmt::Display for PacketId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.number)
+    }
+}
 
 /// A captured packet as raw bytes, as read from a capture source.
 ///
@@ -11,14 +61,23 @@ use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 /// # Example
 ///
 /// ```
-/// use onx::core::packet::{RawPacket, LinkType, DisplayFormat};
+/// use onx::core::packet::{DisplayFormat, LinkType, PacketId, RawPacket};
 /// use time::OffsetDateTime;
 ///
-/// let packet = RawPacket::new(OffsetDateTime::now_utc(), vec![0u8; 64], 64, LinkType::Ethernet);
+/// let packet = RawPacket::new(
+///     PacketId::FIRST,
+///     OffsetDateTime::now_utc(),
+///     vec![0u8; 64],
+///     64,
+///     LinkType::Ethernet,
+/// );
 /// println!("{}", packet.display(DisplayFormat::OneLine));
 /// ```
 #[derive(Debug, Clone)]
 pub struct RawPacket {
+    /// Position of the packet in its capture source
+    id: PacketId,
+
     /// Timestamp when packet was captured
     timestamp: OffsetDateTime,
 
@@ -37,17 +96,24 @@ pub struct RawPacket {
 impl RawPacket {
     /// Create a new packet
     pub fn new(
+        id: PacketId,
         timestamp: OffsetDateTime,
         data: Vec<u8>,
         original_len: usize,
         link_type: LinkType,
     ) -> Self {
         Self {
+            id,
             timestamp,
             data,
             original_len,
             link_type,
         }
+    }
+
+    /// Returns the identity of this packet (its position in the capture)
+    pub fn id(&self) -> PacketId {
+        self.id
     }
 
     /// Get packet data as a slice

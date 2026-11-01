@@ -2,7 +2,7 @@
 
 use crate::{
     capture::source::PacketSource,
-    core::packet::{LinkType, RawPacket},
+    core::packet::{LinkType, PacketId, RawPacket},
 };
 
 use pcap_file::{
@@ -74,6 +74,7 @@ impl<R: Read> PacketSource for PcapSource<R> {
         PcapPacketIter {
             reader: self.reader,
             link_type,
+            next_id: PacketId::FIRST,
         }
     }
 }
@@ -82,6 +83,8 @@ impl<R: Read> PacketSource for PcapSource<R> {
 pub struct PcapPacketIter<R: Read> {
     reader: PcapReader<R>,
     link_type: LinkType,
+    /// Identity given to the next packet read
+    next_id: PacketId,
 }
 
 impl<R: Read> Iterator for PcapPacketIter<R> {
@@ -90,12 +93,16 @@ impl<R: Read> Iterator for PcapPacketIter<R> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.reader.next_packet() {
             Some(Ok(pkt)) => {
+                let id = self.next_id;
+                self.next_id = id.next();
+
                 let timestamp = OffsetDateTime::from_unix_timestamp_nanos(
                     i128::try_from(pkt.timestamp.as_nanos()).unwrap_or(0),
                 )
                 .unwrap_or(OffsetDateTime::UNIX_EPOCH);
 
                 let packet = RawPacket::new(
+                    id,
                     timestamp,
                     pkt.data.to_vec(),
                     pkt.orig_len as usize,
@@ -191,6 +198,7 @@ impl<R: Read> PacketSource for PcapNgSource<R> {
     fn packets(self) -> Self::PacketIter {
         PcapNgPacketIter {
             reader: self.reader,
+            next_id: PacketId::FIRST,
         }
     }
 }
@@ -198,6 +206,8 @@ impl<R: Read> PacketSource for PcapNgSource<R> {
 /// Iterator over packets from a PCAPNG file
 pub struct PcapNgPacketIter<R: Read> {
     reader: PcapNgReader<R>,
+    /// Identity given to the next packet read
+    next_id: PacketId,
 }
 
 impl<R: Read> Iterator for PcapNgPacketIter<R> {
@@ -208,6 +218,9 @@ impl<R: Read> Iterator for PcapNgPacketIter<R> {
             let block = self.reader.next_block()?;
             match block {
                 Ok(Block::EnhancedPacket(epb)) => {
+                    let id = self.next_id;
+                    self.next_id = id.next();
+
                     let epb = epb.into_owned();
                     let interface = match self.reader.packet_interface(&epb) {
                         Some(iface) => iface,
@@ -218,6 +231,7 @@ impl<R: Read> Iterator for PcapNgPacketIter<R> {
                     )
                     .unwrap_or(OffsetDateTime::UNIX_EPOCH);
                     let packet = RawPacket::new(
+                        id,
                         timestamp,
                         epb.data.to_vec(),
                         epb.original_len as usize,
@@ -319,6 +333,18 @@ mod tests {
 
         assert_eq!(packets.len(), 3);
         assert!(packets.iter().all(|p| p.is_ok()));
+    }
+
+    #[test]
+    fn packets_are_numbered_from_one() {
+        let bytes = pcap_bytes(3);
+        let numbers: Vec<u64> = PcapSource::new(&bytes[..])
+            .unwrap()
+            .packets()
+            .map(|p| p.unwrap().id().number())
+            .collect();
+
+        assert_eq!(numbers, vec![1, 2, 3]);
     }
 
     #[test]

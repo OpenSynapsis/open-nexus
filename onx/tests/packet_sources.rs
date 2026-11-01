@@ -45,6 +45,16 @@ fn test_pcap_source_from_manifest() {
         for pkt in &packets {
             assert!(pkt.captured_len() > 0);
         }
+
+        // Packets are numbered 1..=n with no gap, like Wireshark frame numbers
+        // (in PCAPNG, non-packet blocks must not consume a number)
+        let numbers: Vec<u64> = packets.iter().map(|p| p.id().number()).collect();
+        let expected: Vec<u64> = (1..=packets.len() as u64).collect();
+        assert_eq!(
+            numbers, expected,
+            "Packet numbering mismatch for {}",
+            test_file.filename
+        );
     }
 }
 

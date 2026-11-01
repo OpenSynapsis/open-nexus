@@ -12,12 +12,18 @@ use crate::core::packet::RawPacket;
 /// # Example
 ///
 /// ```
-/// use onx::core::packet::{LinkType, RawPacket};
+/// use onx::core::packet::{LinkType, PacketId, RawPacket};
 /// use onx::core::stats::CaptureStats;
 /// use time::OffsetDateTime;
 ///
 /// let mut stats = CaptureStats::new();
-/// let packet = RawPacket::new(OffsetDateTime::now_utc(), vec![0u8; 64], 64, LinkType::Ethernet);
+/// let packet = RawPacket::new(
+///     PacketId::FIRST,
+///     OffsetDateTime::now_utc(),
+///     vec![0u8; 64],
+///     64,
+///     LinkType::Ethernet,
+/// );
 /// stats.add(&packet);
 ///
 /// assert_eq!(stats.packet_count(), 1);
@@ -88,11 +94,17 @@ impl CaptureStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::packet::LinkType;
+    use crate::core::packet::{LinkType, PacketId};
 
     fn packet_at(unix_seconds: i64, size: usize) -> RawPacket {
         let timestamp = OffsetDateTime::from_unix_timestamp(unix_seconds).unwrap();
-        RawPacket::new(timestamp, vec![0u8; size], size, LinkType::Ethernet)
+        RawPacket::new(
+            PacketId::FIRST,
+            timestamp,
+            vec![0u8; size],
+            size,
+            LinkType::Ethernet,
+        )
     }
 
     #[test]
