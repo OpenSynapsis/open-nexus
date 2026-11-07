@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `protocols` module, with the protocol number types `EtherType` and
     `IpProtocol` (known values as constants, e.g. `IpProtocol::TCP`)
   - `Span` (`protocols`): position of a header in the raw bytes of its packet
+  - `Stop` and `HeaderKind` (`protocols`): why decoding of a packet ended early
+    (truncated, malformed, unsupported protocol, too many nested headers)
+  - `LinkType` implements `Hash`
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory
