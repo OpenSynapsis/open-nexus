@@ -3,35 +3,8 @@
 use std::fmt;
 
 use crate::core::packet::LinkType;
+use crate::protocols::header::HeaderKind;
 use crate::protocols::numbers::{EtherType, IpProtocol};
-
-/// Kind of a header decoded by onx, without its fields.
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum HeaderKind {
-    Ethernet,
-    Ipv4,
-    Ipv6,
-    Tcp,
-    Udp,
-    Icmpv4,
-    Icmpv6,
-}
-
-impl fmt::Display for HeaderKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let name = match self {
-            HeaderKind::Ethernet => "Ethernet",
-            HeaderKind::Ipv4 => "IPv4",
-            HeaderKind::Ipv6 => "IPv6",
-            HeaderKind::Tcp => "TCP",
-            HeaderKind::Udp => "UDP",
-            HeaderKind::Icmpv4 => "ICMPv4",
-            HeaderKind::Icmpv6 => "ICMPv6",
-        };
-        write!(f, "{name}")
-    }
-}
 
 /// Why decoding of a packet ended before its normal end.
 ///

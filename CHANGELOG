@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `Stop` and `HeaderKind` (`protocols`): why decoding of a packet ended early
     (truncated, malformed, unsupported protocol, too many nested headers)
   - `LinkType` implements `Hash`
+  - `Header` (`protocols`): a decoded header, one variant per protocol;
+    `Ethernet` header and `MacAddr`
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory
