@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     prefix: modules namespace them (`onx::core::packet::RawPacket`).
   - **Breaking:** `RawPacket::new` takes a `PacketId` as its first argument.
 
+### Dependencies
+  - Added etherparse 0.21.0 (used privately: no etherparse type in the public API)
+
 ## [0.0.2] - 2026-02-15
 
 ### Added

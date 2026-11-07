@@ -2,7 +2,9 @@
 
 use std::fmt;
 
-use crate::protocols::{EtherType, Span};
+use etherparse::Ethernet2HeaderSlice;
+
+use crate::protocols::{next::Next, EtherType, HeaderKind, Span, Stop};
 
 /// IEEE 802 MAC address
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -61,9 +63,74 @@ pub struct Ethernet {
     pub span: Span,
 }
 
+impl Ethernet {
+    /// Length of an Ethernet II header, in bytes
+    const LEN: u32 = 14;
+
+    /// Decode an Ethernet II header.
+    ///
+    /// `bytes` starts at the header; `offset` is its position in the raw
+    /// packet, recorded in the header's span.
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "called by the dissection loop (step 5)")
+    )]
+    pub(crate) fn decode(bytes: &[u8], offset: u32) -> Result<(Ethernet, Next), Stop> {
+        let header_slice = Ethernet2HeaderSlice::from_slice(bytes)
+            .map_err(|_| Stop::Truncated(HeaderKind::Ethernet))?;
+
+        let ether_type = EtherType::from(header_slice.ether_type().0);
+
+        let ether = Ethernet {
+            destination: MacAddr(header_slice.destination()),
+            source: MacAddr(header_slice.source()),
+            ether_type,
+            span: Span::new(offset, Self::LEN),
+        };
+
+        Ok((ether, Next::EtherType(ether_type)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Ethernet header (broadcast destination, IPv4) followed by `payload`
+    fn frame(payload: &[u8]) -> Vec<u8> {
+        let mut bytes = vec![0xff; 6];
+        bytes.extend_from_slice(&[0x02, 0, 0, 0, 0, 0x01]);
+        bytes.extend_from_slice(&[0x08, 0x00]);
+        bytes.extend_from_slice(payload);
+        bytes
+    }
+
+    #[test]
+    fn decode_fields() {
+        let (ethernet, next) = Ethernet::decode(&frame(&[0xaa; 20]), 0).unwrap();
+
+        assert_eq!(ethernet.destination, MacAddr::new([0xff; 6]));
+        assert_eq!(ethernet.source, MacAddr::new([0x02, 0, 0, 0, 0, 0x01]));
+        assert_eq!(ethernet.ether_type, EtherType::IPV4);
+        assert_eq!(ethernet.span, Span::new(0, 14));
+        assert_eq!(next, Next::EtherType(EtherType::IPV4));
+    }
+
+    #[test]
+    fn decode_records_offset_in_span() {
+        // e.g. an inner Ethernet frame inside a tunnel
+        let (ethernet, _) = Ethernet::decode(&frame(&[]), 50).unwrap();
+        assert_eq!(ethernet.span, Span::new(50, 14));
+    }
+
+    #[test]
+    fn decode_truncated() {
+        let bytes = frame(&[]);
+        assert_eq!(
+            Ethernet::decode(&bytes[..10], 0),
+            Err(Stop::Truncated(HeaderKind::Ethernet))
+        );
+    }
 
     #[test]
     fn mac_display() {
