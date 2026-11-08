@@ -1,3 +1,9 @@
+//! Helpers shared by the integration tests.
+//!
+//! Each file in `tests/` is a separate crate with its own copy of this
+//! module, and each uses only part of it: unused items are expected.
+#![allow(dead_code)]
+
 use fs4::FileExt;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
