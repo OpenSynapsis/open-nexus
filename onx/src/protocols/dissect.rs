@@ -1,0 +1,133 @@
+//! The dissection loop: from raw bytes to a stack of decoded headers
+
+use arrayvec::ArrayVec;
+
+use crate::core::packet::{LinkType, RawPacket};
+use crate::protocols::{
+    ethernet::Ethernet,
+    next::Next,
+    packet::{Packet, MAX_DEPTH},
+    Header, Stop,
+};
+
+impl RawPacket {
+    /// Decode the protocol headers of this packet.
+    ///
+    /// Never fails: decoding keeps the headers decoded so far and records
+    /// why it stopped early, if it did ([`Packet::stopped`]).
+    pub fn decode(&self) -> Packet {
+        let (headers, stopped) = dissect(self.data(), self.link_type());
+        Packet::new(
+            self.id(),
+            self.timestamp(),
+            self.original_len(),
+            headers,
+            stopped,
+        )
+    }
+}
+
+/// Decode headers from `data`, starting with the link layer
+fn dissect(data: &[u8], link_type: LinkType) -> (ArrayVec<Header, MAX_DEPTH>, Option<Stop>) {
+    let mut headers: ArrayVec<Header, MAX_DEPTH> = ArrayVec::new();
+    let mut next = Next::Link(link_type);
+    let mut offset: u32 = 0;
+
+    loop {
+        let bytes = data.get(offset as usize..).unwrap_or_default();
+        let decoded = match next {
+            Next::Link(LinkType::Ethernet) => Ethernet::decode(bytes, offset)
+                .map(|(ethernet, following)| (Header::Ethernet(ethernet), following)),
+            Next::Link(other_linktype) => {
+                return (headers, Some(Stop::UnsupportedLinkType(other_linktype)))
+            }
+            Next::EtherType(other_ethertype) => {
+                return (headers, Some(Stop::UnsupportedEtherType(other_ethertype)))
+            }
+        };
+        match decoded {
+            Ok((header, following)) => {
+                let len = header.span().len();
+                if headers.try_push(header).is_err() {
+                    return (headers, Some(Stop::TooDeep));
+                };
+                next = following;
+                offset += len;
+            }
+            Err(stop) => return (headers, Some(stop)),
+        };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::packet::PacketId;
+    use crate::protocols::{EtherType, HeaderKind};
+    use time::OffsetDateTime;
+
+    /// Ethernet header carrying IPv4, followed by 20 bytes of payload
+    fn ethernet_ipv4() -> Vec<u8> {
+        let mut bytes = vec![0xff; 6];
+        bytes.extend_from_slice(&[0x02, 0, 0, 0, 0, 0x01]);
+        bytes.extend_from_slice(&[0x08, 0x00]);
+        bytes.extend_from_slice(&[0x45; 20]);
+        bytes
+    }
+
+    fn kinds(headers: &[Header]) -> Vec<HeaderKind> {
+        headers.iter().map(Header::kind).collect()
+    }
+
+    #[test]
+    fn stops_after_ethernet_on_unsupported_ether_type() {
+        let (headers, stopped) = dissect(&ethernet_ipv4(), LinkType::Ethernet);
+
+        assert_eq!(kinds(&headers), vec![HeaderKind::Ethernet]);
+        assert_eq!(stopped, Some(Stop::UnsupportedEtherType(EtherType::IPV4)));
+    }
+
+    #[test]
+    fn truncated_ethernet() {
+        let (headers, stopped) = dissect(&ethernet_ipv4()[..10], LinkType::Ethernet);
+
+        assert!(headers.is_empty());
+        assert_eq!(stopped, Some(Stop::Truncated(HeaderKind::Ethernet)));
+    }
+
+    #[test]
+    fn empty_packet() {
+        let (headers, stopped) = dissect(&[], LinkType::Ethernet);
+
+        assert!(headers.is_empty());
+        assert_eq!(stopped, Some(Stop::Truncated(HeaderKind::Ethernet)));
+    }
+
+    #[test]
+    fn unsupported_link_type() {
+        let (headers, stopped) = dissect(&ethernet_ipv4(), LinkType::Other(147));
+
+        assert!(headers.is_empty());
+        assert_eq!(
+            stopped,
+            Some(Stop::UnsupportedLinkType(LinkType::Other(147)))
+        );
+    }
+
+    #[test]
+    fn raw_packet_decode_keeps_metadata() {
+        let raw = RawPacket::new(
+            PacketId::FIRST,
+            OffsetDateTime::UNIX_EPOCH,
+            ethernet_ipv4(),
+            1500,
+            LinkType::Ethernet,
+        );
+        let packet = raw.decode();
+
+        assert_eq!(packet.id(), PacketId::FIRST);
+        assert_eq!(packet.timestamp(), OffsetDateTime::UNIX_EPOCH);
+        assert_eq!(packet.original_len(), 1500);
+        assert_eq!(kinds(packet.headers()), vec![HeaderKind::Ethernet]);
+    }
+}

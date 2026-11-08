@@ -142,6 +142,11 @@ impl RawPacket {
     pub fn original_len(&self) -> usize {
         self.original_len
     }
+
+    /// Returns the link layer type: how to decode the start of the data
+    pub fn link_type(&self) -> LinkType {
+        self.link_type
+    }
 }
 
 // =================================================

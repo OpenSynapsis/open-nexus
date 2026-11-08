@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `LinkType` implements `Hash`
   - `Header` (`protocols`): a decoded header, one variant per protocol;
     `Ethernet` header and `MacAddr`
+  - `RawPacket::decode()` returns a `Packet` (`protocols`): packet metadata and
+    its decoded headers, outermost first, plus why decoding stopped early;
+    at most `MAX_DEPTH` (16) headers per packet
+  - `RawPacket::link_type()`
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory
@@ -37,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Dependencies
   - Added etherparse 0.21.0 (used privately: no etherparse type in the public API)
+  - Added arrayvec 0.7.8 (already a dependency of etherparse; not exposed in the
+    public API)
 
 ## [0.0.2] - 2026-02-15
 

@@ -71,10 +71,6 @@ impl Ethernet {
     ///
     /// `bytes` starts at the header; `offset` is its position in the raw
     /// packet, recorded in the header's span.
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "called by the dissection loop (step 5)")
-    )]
     pub(crate) fn decode(bytes: &[u8], offset: u32) -> Result<(Ethernet, Next), Stop> {
         let header_slice = Ethernet2HeaderSlice::from_slice(bytes)
             .map_err(|_| Stop::Truncated(HeaderKind::Ethernet))?;
