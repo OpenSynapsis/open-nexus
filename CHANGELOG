@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     `NxPacketDisplay` to `RawPacketDisplay`. Library types no longer carry the `Nx`
     prefix: modules namespace them (`onx::core::packet::RawPacket`).
   - **Breaking:** `RawPacket::new` takes a `PacketId` as its first argument.
+  - **Breaking (CLI):** commands are grouped by object (`onx <group> <command>`),
+    each with a short alias. `onx read` is now `onx capture info` (`onx c i`).
+    The CLI is unstable during 0.0.x.
+  - CLI help describes every command and argument.
 
 ### Dependencies
   - Added etherparse 0.21.0 (used privately: no etherparse type in the public API)

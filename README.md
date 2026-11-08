@@ -34,13 +34,21 @@ cargo install open-nexus
 ```
 
 ## Usage
+
+Commands are grouped by object: `onx <group> <command>`. Each group and command
+has a short alias.
+
 ```bash
-# Read packets from a PCAP file
-onx read path/to/capture.pcap
+# Summary of a PCAP/PCAPNG file (alias: onx c i)
+onx capture info path/to/capture.pcap
+
 # Show help
 onx --help
-onx read --help
+onx capture --help
 ```
+
+⚠️ The command-line interface is unstable during 0.0.x: commands may be renamed
+or reorganized between releases.
 
 ## License
 

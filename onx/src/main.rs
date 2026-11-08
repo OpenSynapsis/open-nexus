@@ -1,6 +1,9 @@
 //! Open Nexus CLI
 
-use std::process;
+use std::{
+    path::{Path, PathBuf},
+    process,
+};
 
 use clap::{Parser, Subcommand};
 
@@ -12,23 +15,37 @@ use onx::{
 /// Number of packets shown in the preview after the statistics
 const PREVIEW_COUNT: usize = 5;
 
+/// Flow-based network packet analysis.
+///
+/// Commands are grouped by object (`onx <group> <command>`); each group and
+/// command has a short alias, e.g. `onx c i` for `onx capture info`.
+/// The CLI is unstable during 0.0.x.
 #[derive(Parser)]
-#[command(name = "onx")]
-#[command(about = "")]
-#[command(version)]
+#[command(name = "onx", version)]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Command,
 }
 
 #[derive(Subcommand)]
-enum Commands {
-    // Read and display PCAP/PCAPNG file
-    Read {
-        // Path to pcap file
-        file: String,
+enum Command {
+    /// Capture files (PCAP, PCAPNG)
+    #[command(visible_alias = "c")]
+    Capture {
+        #[command(subcommand)]
+        command: CaptureCommand,
+    },
+}
 
-        // Show verbose output
+#[derive(Subcommand)]
+enum CaptureCommand {
+    /// Summary of a capture: packet count, bytes, time range, first packets
+    #[command(visible_alias = "i")]
+    Info {
+        /// Path to the capture file
+        file: PathBuf,
+
+        /// Show verbose output
         #[arg(short, long)]
         verbose: bool,
     },
@@ -38,21 +55,21 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Read { file, verbose } => {
-            read_pcap(&file, verbose);
-        }
+        Command::Capture { command } => match command {
+            CaptureCommand::Info { file, verbose } => capture_info(&file, verbose),
+        },
     }
 }
 
-fn read_pcap(path: &str, verbose: bool) {
+fn capture_info(path: &Path, verbose: bool) {
     if verbose {
-        println!("Reading: {}", path);
+        println!("Reading: {}", path.display());
     }
     println!();
 
     // Check if file exists
-    if !std::path::Path::new(path).exists() {
-        eprintln!("✗ File not found: {}", path);
+    if !path.exists() {
+        eprintln!("✗ File not found: {}", path.display());
         process::exit(1);
     }
 
@@ -68,7 +85,7 @@ fn read_pcap(path: &str, verbose: bool) {
     // Read packets one at a time: only the statistics and the first few
     // packets are kept in memory, so captures of any size can be read.
     // Reading stops at the first error, keeping what was read before it.
-    println!("Parsing packets...");
+    println!("Reading packets...");
     let mut stats = CaptureStats::new();
     let mut preview = Vec::with_capacity(PREVIEW_COUNT);
     let mut read_error = None;
