@@ -10,6 +10,7 @@ use clap::{Parser, Subcommand};
 use onx::{
     capture::{read_capture_file, PacketSource},
     core::{packet::DisplayFormat, stats::CaptureStats},
+    protocols::ProtocolStats,
 };
 
 /// Number of packets shown in the preview after the statistics
@@ -35,6 +36,23 @@ enum Command {
         #[command(subcommand)]
         command: CaptureCommand,
     },
+
+    /// Decoded packets
+    #[command(visible_alias = "p")]
+    Packets {
+        #[command(subcommand)]
+        command: PacketsCommand,
+    },
+}
+
+#[derive(Subcommand)]
+enum PacketsCommand {
+    /// Decode every packet and count protocols and undecoded reasons
+    #[command(visible_alias = "s")]
+    Stats {
+        /// Path to the capture file
+        file: PathBuf,
+    },
 }
 
 #[derive(Subcommand)]
@@ -58,6 +76,60 @@ fn main() {
         Command::Capture { command } => match command {
             CaptureCommand::Info { file, verbose } => capture_info(&file, verbose),
         },
+        Command::Packets { command } => match command {
+            PacketsCommand::Stats { file } => packets_stats(&file),
+        },
+    }
+}
+
+/// Width of the label column in `packets stats` output
+const LABEL_WIDTH: usize = 32;
+
+fn packets_stats(path: &Path) {
+    let packets = match read_capture_file(path) {
+        Ok(source) => source.packets(),
+        Err(e) => {
+            eprintln!("✗ Error opening {}: {}", path.display(), e);
+            process::exit(1);
+        }
+    };
+
+    // Decode packets one at a time: only counters are kept in memory
+    let mut stats = ProtocolStats::new();
+    let mut read_error = None;
+    for result in packets {
+        match result {
+            Ok(raw) => stats.add(&raw.decode()),
+            Err(e) => {
+                read_error = Some(e);
+                break;
+            }
+        }
+    }
+
+    println!("Decoded {} packets", stats.packet_count());
+
+    println!();
+    println!("Headers:");
+    for (kind, count) in stats.header_counts() {
+        // Display impls write directly and ignore width: pad a String instead
+        println!("  {:<LABEL_WIDTH$} {count:>8}", kind.to_string());
+    }
+
+    let stops = stats.stop_counts();
+    if !stops.is_empty() {
+        println!();
+        println!("Not fully decoded:");
+        for (stop, count) in stops {
+            println!("  {:<LABEL_WIDTH$} {count:>8}", stop.to_string());
+        }
+    }
+
+    // Partial read: the statistics above are still useful, but signal the failure
+    if let Some(e) = read_error {
+        eprintln!();
+        eprintln!("✗ Error reading packet {}: {}", stats.packet_count() + 1, e);
+        process::exit(1);
     }
 }
 

@@ -154,7 +154,7 @@ impl RawPacket {
 // =================================================
 
 /// Link layer type
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum LinkType {
     /// Ethernet (IEEE 802.3)
     Ethernet,

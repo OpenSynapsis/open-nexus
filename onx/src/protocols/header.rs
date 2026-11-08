@@ -34,7 +34,7 @@ impl Header {
 
 /// Kind of a header decoded by onx, without its fields.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum HeaderKind {
     Ethernet,
     Ipv4,

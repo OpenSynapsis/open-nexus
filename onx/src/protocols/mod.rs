@@ -10,6 +10,7 @@ mod next;
 pub mod numbers;
 pub mod packet;
 pub mod span;
+pub mod stats;
 pub mod stop;
 
 // Re-export commonly used types
@@ -19,4 +20,5 @@ pub use numbers::EtherType;
 pub use numbers::IpProtocol;
 pub use packet::{Packet, MAX_DEPTH};
 pub use span::Span;
+pub use stats::ProtocolStats;
 pub use stop::Stop;

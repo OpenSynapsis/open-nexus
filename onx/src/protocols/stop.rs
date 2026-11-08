@@ -13,9 +13,9 @@ use crate::protocols::numbers::{EtherType, IpProtocol};
 /// normal end (e.g. the payload after TCP or UDP) has no `Stop`.
 ///
 /// `Copy`, `Eq` and `Hash`, so that stops can be counted by reason
-/// (`HashMap<Stop, usize>`).
+/// (`HashMap<Stop, usize>`); `Ord` for a stable display order.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Stop {
     /// The captured data ends inside this header (e.g. snaplen)
     Truncated(HeaderKind),

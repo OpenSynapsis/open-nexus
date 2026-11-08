@@ -42,6 +42,10 @@ has a short alias.
 # Summary of a PCAP/PCAPNG file (alias: onx c i)
 onx capture info path/to/capture.pcap
 
+# Decode every packet: headers by protocol, packets not fully decoded and why
+# (alias: onx p s)
+onx packets stats path/to/capture.pcap
+
 # Show help
 onx --help
 onx capture --help
