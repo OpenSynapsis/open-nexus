@@ -82,9 +82,6 @@ fn main() {
     }
 }
 
-/// Width of the label column in `packets stats` output
-const LABEL_WIDTH: usize = 32;
-
 fn packets_stats(path: &Path) {
     let packets = match read_capture_file(path) {
         Ok(source) => source.packets(),
@@ -109,20 +106,26 @@ fn packets_stats(path: &Path) {
 
     println!("Decoded {} packets", stats.packet_count());
 
+    // Labels are rendered first: the column width depends on the longest one
+    let headers = labelled(stats.header_counts());
+    let stops = labelled(stats.stop_counts());
+
+    // One width for both sections, so that their counts line up
+    let width = headers
+        .iter()
+        .chain(&stops)
+        .map(|(label, _)| label.len())
+        .max()
+        .unwrap_or(0);
+
     println!();
     println!("Headers:");
-    for (kind, count) in stats.header_counts() {
-        // Display impls write directly and ignore width: pad a String instead
-        println!("  {:<LABEL_WIDTH$} {count:>8}", kind.to_string());
-    }
+    print_rows(&headers, width);
 
-    let stops = stats.stop_counts();
     if !stops.is_empty() {
         println!();
         println!("Not fully decoded:");
-        for (stop, count) in stops {
-            println!("  {:<LABEL_WIDTH$} {count:>8}", stop.to_string());
-        }
+        print_rows(&stops, width);
     }
 
     // Partial read: the statistics above are still useful, but signal the failure
@@ -130,6 +133,21 @@ fn packets_stats(path: &Path) {
         eprintln!();
         eprintln!("✗ Error reading packet {}: {}", stats.packet_count() + 1, e);
         process::exit(1);
+    }
+}
+
+/// Render the keys of `counts` as labels
+fn labelled<K: ToString>(counts: Vec<(K, usize)>) -> Vec<(String, usize)> {
+    counts
+        .into_iter()
+        .map(|(key, count)| (key.to_string(), count))
+        .collect()
+}
+
+/// Print one `label count` row per entry, labels padded to `width`
+fn print_rows(rows: &[(String, usize)], width: usize) {
+    for (label, count) in rows {
+        println!("  {label:<width$} {count:>8}");
     }
 }
 

@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     with status 1, instead of discarding them
   - A missing or unreadable capture file is reported as an I/O error instead
     of "Unsupported file format"; the file is opened once instead of three times
+  - `onx packets stats` aligns its counts whatever the length of the labels
 
 ### Changed
   - **Breaking:** `NxPacket` renamed to `RawPacket`, `NxPacketFormat` to `DisplayFormat`,
