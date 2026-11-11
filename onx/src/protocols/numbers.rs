@@ -25,6 +25,8 @@ pub struct EtherType(u16);
 impl EtherType {
     /// Internet Protocol version 4
     pub const IPV4: EtherType = EtherType(0x0800);
+    /// Address Resolution Protocol
+    pub const ARP: EtherType = EtherType(0x0806);
     /// Internet Protocol version 6
     pub const IPV6: EtherType = EtherType(0x86dd);
 
@@ -32,6 +34,7 @@ impl EtherType {
     fn name(self) -> Option<&'static str> {
         match self {
             EtherType::IPV4 => Some("IPv4"),
+            EtherType::ARP => Some("ARP"),
             EtherType::IPV6 => Some("IPv6"),
             _ => None,
         }
@@ -84,6 +87,8 @@ pub struct IpProtocol(u8);
 impl IpProtocol {
     /// Internet Control Message Protocol
     pub const ICMP: IpProtocol = IpProtocol(1);
+    /// Internet Group Management Protocol
+    pub const IGMP: IpProtocol = IpProtocol(2);
     /// Transmission Control Protocol
     pub const TCP: IpProtocol = IpProtocol(6);
     /// User Datagram Protocol
@@ -95,6 +100,7 @@ impl IpProtocol {
     fn name(self) -> Option<&'static str> {
         match self {
             IpProtocol::ICMP => Some("ICMP"),
+            IpProtocol::IGMP => Some("IGMP"),
             IpProtocol::TCP => Some("TCP"),
             IpProtocol::UDP => Some("UDP"),
             IpProtocol::ICMPV6 => Some("ICMPv6"),

@@ -71,8 +71,8 @@ mod tests {
             "unsupported link type: Unknown (147)"
         );
         assert_eq!(
-            Stop::UnsupportedEtherType(EtherType::from(0x0806)).to_string(),
-            "unsupported EtherType: 0x0806"
+            Stop::UnsupportedEtherType(EtherType::from(0x88b5)).to_string(),
+            "unsupported EtherType: 0x88b5"
         );
         assert_eq!(
             Stop::UnsupportedIpProtocol(IpProtocol::from(47)).to_string(),

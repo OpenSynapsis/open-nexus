@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     in a fragmented datagram
   - `RawPacket::decode()` decodes IPv4 headers (options included in the span);
     a non-first fragment ends decoding normally, without a `Stop`
+  - `EtherType::ARP` and `IpProtocol::IGMP` constants (shown by name in
+    `onx packets stats`)
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory

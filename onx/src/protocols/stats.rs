@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(
             stats.stop_counts(),
             vec![
-                (Stop::UnsupportedEtherType(EtherType::from(0x0806)), 2),
+                (Stop::UnsupportedEtherType(EtherType::ARP), 2),
                 (Stop::Truncated(HeaderKind::Ethernet), 1),
                 (Stop::UnsupportedEtherType(EtherType::IPV6), 1),
             ]
