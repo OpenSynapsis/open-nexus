@@ -154,6 +154,9 @@ impl RawPacket {
 // =================================================
 
 /// Link layer type
+///
+/// `#[non_exhaustive]`: new link types can be added without a breaking change.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum LinkType {
     /// Ethernet (IEEE 802.3)

@@ -55,6 +55,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     each with a short alias. `onx read` is now `onx capture info` (`onx c i`).
     The CLI is unstable during 0.0.x.
   - CLI help describes every command and argument.
+  - **Breaking:** `PcapError` and `LinkType` are `#[non_exhaustive]`: a `match`
+    on them outside onx needs a wildcard arm, so variants can be added later
+    without a breaking change.
+
+### Removed
+  - **Breaking:** `PcapSource::is_pcap_file` and `PcapNgSource::is_pcapng_file`.
+    They returned `false` for a file that could not be read; use
+    `read_capture_file`, which detects the format and reports I/O errors.
 
 ### Dependencies
   - Added etherparse 0.21.0 (used privately: no etherparse type in the public API)

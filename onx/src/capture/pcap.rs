@@ -34,24 +34,6 @@ impl PcapSource<BufReader<File>> {
         let reader = BufReader::new(file);
         Self::new(reader)
     }
-
-    /// Identify if the file is a PCAP file by trying to parse the header
-    pub fn is_pcap_file<P: AsRef<Path>>(path: P) -> bool {
-        // Check if the first bytes match the PCAP magic number
-        if let Ok(mut file) = File::open(path) {
-            let mut magic_number: [u8; 4] = [0u8; 4]; // PCAP global header is 24 bytes
-            if file.read_exact(&mut magic_number).is_ok() {
-                // Little-endian (most common, e.g. x86 machines)
-                return magic_number == [0xd4, 0xc3, 0xb2, 0xa1] ||
-                // Big-endian
-                magic_number == [0xa1, 0xb2, 0xc3, 0xd4] ||
-                // Nanosecond variants
-                magic_number == [0x4d, 0x3c, 0xb2, 0xa1] ||
-                magic_number == [0xa1, 0xb2, 0x3c, 0x4d];
-            }
-        }
-        false
-    }
 }
 
 impl<R: Read> PcapSource<R> {
@@ -118,6 +100,9 @@ impl<R: Read> Iterator for PcapPacketIter<R> {
 }
 
 /// Error type for PCAP operations
+///
+/// `#[non_exhaustive]`: new error cases can be added without a breaking change.
+#[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum PcapError {
     #[error("IO error: {0}")]
@@ -166,18 +151,6 @@ impl PcapNgSource<BufReader<File>> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         Self::new(reader)
-    }
-
-    /// Identify if the file is a PCAPNG file by trying to parse the first block
-    pub fn is_pcapng_file<P: AsRef<Path>>(path: P) -> bool {
-        if let Ok(mut file) = File::open(path) {
-            let mut magic_number: [u8; 4] = [0u8; 4];
-            if file.read_exact(&mut magic_number).is_ok() {
-                // PCAPNG magic number is 0x0A0D0D0A
-                return magic_number == [0x0A, 0x0D, 0x0D, 0x0A];
-            }
-        }
-        false
     }
 }
 
