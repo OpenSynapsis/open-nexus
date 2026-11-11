@@ -91,7 +91,7 @@ mod tests {
             protocol: IpProtocol::TCP,
             identification: 48300,
             total_len: 100,
-            fragment: Fragment::new(0, false),
+            fragment: Fragment::NONE,
             span: Span::new(14, 20),
         });
 
