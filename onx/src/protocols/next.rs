@@ -1,7 +1,7 @@
 //! What to decode after a header
 
 use crate::core::packet::LinkType;
-use crate::protocols::EtherType;
+use crate::protocols::{EtherType, IpProtocol};
 
 /// Hint given by a decoded header about the header that follows it.
 ///
@@ -14,4 +14,9 @@ pub(crate) enum Next {
     Link(LinkType),
     /// The next header is identified by an EtherType
     EtherType(EtherType),
+    /// The next header is identified by an IP protocol number
+    IpProtocol(IpProtocol),
+    /// Nothing more to decode: the packet ends normally (e.g. the payload
+    /// of a non-first IP fragment has no header)
+    End,
 }

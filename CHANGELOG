@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `HeaderKind`, `Stop` and `LinkType` implement `PartialOrd` and `Ord`
   - `Ipv4` header (`Header::Ipv4`) and `Fragment`, the position of an IP packet
     in a fragmented datagram
+  - `RawPacket::decode()` decodes IPv4 headers (options included in the span);
+    a non-first fragment ends decoding normally, without a `Stop`
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory

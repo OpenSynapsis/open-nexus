@@ -5,9 +5,10 @@ use arrayvec::ArrayVec;
 use crate::core::packet::{LinkType, RawPacket};
 use crate::protocols::{
     ethernet::Ethernet,
+    ipv4::Ipv4,
     next::Next,
     packet::{Packet, MAX_DEPTH},
-    Header, Stop,
+    EtherType, Header, Stop,
 };
 
 impl RawPacket {
@@ -38,12 +39,20 @@ fn dissect(data: &[u8], link_type: LinkType) -> (ArrayVec<Header, MAX_DEPTH>, Op
         let decoded = match next {
             Next::Link(LinkType::Ethernet) => Ethernet::decode(bytes, offset)
                 .map(|(ethernet, following)| (Header::Ethernet(ethernet), following)),
+            Next::EtherType(EtherType::IPV4) => {
+                Ipv4::decode(bytes, offset).map(|(ipv4, following)| (Header::Ipv4(ipv4), following))
+            }
+            // Fallbacks
             Next::Link(other_linktype) => {
                 return (headers, Some(Stop::UnsupportedLinkType(other_linktype)))
             }
             Next::EtherType(other_ethertype) => {
                 return (headers, Some(Stop::UnsupportedEtherType(other_ethertype)))
             }
+            Next::IpProtocol(other_ipprotocol) => {
+                return (headers, Some(Stop::UnsupportedIpProtocol(other_ipprotocol)))
+            }
+            Next::End => return (headers, None),
         };
         match decoded {
             Ok((header, following)) => {
@@ -63,15 +72,19 @@ fn dissect(data: &[u8], link_type: LinkType) -> (ArrayVec<Header, MAX_DEPTH>, Op
 mod tests {
     use super::*;
     use crate::core::packet::PacketId;
-    use crate::protocols::{EtherType, HeaderKind};
+    use crate::protocols::{HeaderKind, IpProtocol};
     use time::OffsetDateTime;
 
-    /// Ethernet header carrying IPv4, followed by 20 bytes of payload
+    /// Ethernet header, then a 20-byte IPv4 header carrying UDP
+    /// (10.0.0.1 -> 10.0.0.2, not fragmented)
     fn ethernet_ipv4() -> Vec<u8> {
         let mut bytes = vec![0xff; 6];
         bytes.extend_from_slice(&[0x02, 0, 0, 0, 0, 0x01]);
         bytes.extend_from_slice(&[0x08, 0x00]);
-        bytes.extend_from_slice(&[0x45; 20]);
+        bytes.extend_from_slice(&[
+            0x45, 0x00, 0x00, 28, 0x12, 0x34, 0x00, 0x00, 64, 17, 0, 0, //
+            10, 0, 0, 1, 10, 0, 0, 2,
+        ]);
         bytes
     }
 
@@ -80,11 +93,14 @@ mod tests {
     }
 
     #[test]
-    fn stops_after_ethernet_on_unsupported_ether_type() {
+    fn stops_on_unsupported_ip_protocol() {
         let (headers, stopped) = dissect(&ethernet_ipv4(), LinkType::Ethernet);
 
-        assert_eq!(kinds(&headers), vec![HeaderKind::Ethernet]);
-        assert_eq!(stopped, Some(Stop::UnsupportedEtherType(EtherType::IPV4)));
+        assert_eq!(
+            kinds(&headers),
+            vec![HeaderKind::Ethernet, HeaderKind::Ipv4]
+        );
+        assert_eq!(stopped, Some(Stop::UnsupportedIpProtocol(IpProtocol::UDP)));
     }
 
     #[test]
@@ -128,6 +144,9 @@ mod tests {
         assert_eq!(packet.id(), PacketId::FIRST);
         assert_eq!(packet.timestamp(), OffsetDateTime::UNIX_EPOCH);
         assert_eq!(packet.original_len(), 1500);
-        assert_eq!(kinds(packet.headers()), vec![HeaderKind::Ethernet]);
+        assert_eq!(
+            kinds(packet.headers()),
+            vec![HeaderKind::Ethernet, HeaderKind::Ipv4]
+        );
     }
 }

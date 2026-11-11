@@ -107,8 +107,8 @@ mod tests {
     #[test]
     fn counts_headers_and_stops() {
         let mut stats = ProtocolStats::new();
-        stats.add(&ethernet(0x0800));
-        stats.add(&ethernet(0x0800));
+        stats.add(&ethernet(0x0806));
+        stats.add(&ethernet(0x0806));
         stats.add(&ethernet(0x86dd));
         stats.add(&decoded(vec![0; 5])); // too short for Ethernet
 
@@ -117,7 +117,7 @@ mod tests {
         assert_eq!(
             stats.stop_counts(),
             vec![
-                (Stop::UnsupportedEtherType(EtherType::IPV4), 2),
+                (Stop::UnsupportedEtherType(EtherType::from(0x0806)), 2),
                 (Stop::Truncated(HeaderKind::Ethernet), 1),
                 (Stop::UnsupportedEtherType(EtherType::IPV6), 1),
             ]

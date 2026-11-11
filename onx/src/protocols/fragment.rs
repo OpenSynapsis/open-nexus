@@ -21,10 +21,6 @@ impl Fragment {
 
     /// Create fragment information from the offset field (8-byte units) and
     /// the "more fragments" flag
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "called by Ipv4::decode (step 7b)")
-    )]
     pub(crate) const fn new(offset: u16, more_fragments: bool) -> Self {
         Self {
             offset,
