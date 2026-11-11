@@ -4,11 +4,9 @@ use arrayvec::ArrayVec;
 
 use crate::core::packet::{LinkType, RawPacket};
 use crate::protocols::{
-    ethernet::Ethernet,
-    ipv4::Ipv4,
     next::Next,
     packet::{Packet, MAX_DEPTH},
-    EtherType, Header, Stop,
+    EtherType, Ethernet, Header, Ipv4, Ipv6, Stop,
 };
 
 impl RawPacket {
@@ -36,24 +34,29 @@ fn dissect(data: &[u8], link_type: LinkType) -> (ArrayVec<Header, MAX_DEPTH>, Op
 
     loop {
         let bytes = data.get(offset as usize..).unwrap_or_default();
-        let decoded = match next {
-            Next::Link(LinkType::Ethernet) => Ethernet::decode(bytes, offset)
-                .map(|(ethernet, following)| (Header::Ethernet(ethernet), following)),
-            Next::EtherType(EtherType::IPV4) => {
-                Ipv4::decode(bytes, offset).map(|(ipv4, following)| (Header::Ipv4(ipv4), following))
-            }
-            // Fallbacks
-            Next::Link(other_linktype) => {
-                return (headers, Some(Stop::UnsupportedLinkType(other_linktype)))
-            }
-            Next::EtherType(other_ethertype) => {
-                return (headers, Some(Stop::UnsupportedEtherType(other_ethertype)))
-            }
-            Next::IpProtocol(other_ipprotocol) => {
-                return (headers, Some(Stop::UnsupportedIpProtocol(other_ipprotocol)))
-            }
-            Next::End => return (headers, None),
-        };
+        let decoded =
+            match next {
+                Next::Link(LinkType::Ethernet) => Ethernet::decode(bytes, offset)
+                    .map(|(ethernet, following)| (Header::Ethernet(ethernet), following)),
+                Next::EtherType(EtherType::IPV4) => Ipv4::decode(bytes, offset)
+                    .map(|(ipv4, following)| (Header::Ipv4(ipv4), following)),
+                Next::EtherType(EtherType::IPV6) => Ipv6::decode(bytes, offset)
+                    .map(|(ipv6, following)| (Header::Ipv6(ipv6), following)),
+                // Fallbacks
+                Next::Link(other_linktype) => {
+                    return (headers, Some(Stop::UnsupportedLinkType(other_linktype)))
+                }
+                Next::EtherType(other_ethertype) => {
+                    return (headers, Some(Stop::UnsupportedEtherType(other_ethertype)))
+                }
+                Next::IpProtocol(other_ipprotocol) => {
+                    return (headers, Some(Stop::UnsupportedIpProtocol(other_ipprotocol)))
+                }
+                Next::Ipv6Extension(other_ipv6ext) => {
+                    return (headers, Some(Stop::UnsupportedIpProtocol(other_ipv6ext)))
+                }
+                Next::End => return (headers, None),
+            };
         match decoded {
             Ok((header, following)) => {
                 let len = header.span().len();

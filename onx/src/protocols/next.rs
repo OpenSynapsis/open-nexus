@@ -16,6 +16,9 @@ pub(crate) enum Next {
     EtherType(EtherType),
     /// The next header is identified by an IP protocol number
     IpProtocol(IpProtocol),
+    /// The next header is an IPv6 extension header. Its number is an IP
+    /// protocol number, but it only means "extension" after IPv6.
+    Ipv6Extension(IpProtocol),
     /// Nothing more to decode: the packet ends normally (e.g. the payload
     /// of a non-first IP fragment has no header)
     End,

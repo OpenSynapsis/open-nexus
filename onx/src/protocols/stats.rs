@@ -109,7 +109,7 @@ mod tests {
         let mut stats = ProtocolStats::new();
         stats.add(&ethernet(0x0806));
         stats.add(&ethernet(0x0806));
-        stats.add(&ethernet(0x86dd));
+        stats.add(&ethernet(0x88cc));
         stats.add(&decoded(vec![0; 5])); // too short for Ethernet
 
         assert_eq!(stats.packet_count(), 4);
@@ -119,7 +119,7 @@ mod tests {
             vec![
                 (Stop::UnsupportedEtherType(EtherType::ARP), 2),
                 (Stop::Truncated(HeaderKind::Ethernet), 1),
-                (Stop::UnsupportedEtherType(EtherType::IPV6), 1),
+                (Stop::UnsupportedEtherType(EtherType::from(0x88cc)), 1),
             ]
         );
     }

@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     a non-first fragment ends decoding normally, without a `Stop`
   - `Ipv6` header (`Header::Ipv6`): the fixed header; extension headers will be
     separate headers in the stack
+  - `RawPacket::decode()` decodes the IPv6 fixed header; extension headers are
+    reported as unsupported for now
+  - `IpProtocol` constants for the IPv6 extension headers (`IPV6_HOPOPT`,
+    `IPV6_ROUTE`, `IPV6_FRAG`, `IPV6_OPTS`) and `IPV6_NONXT`
   - `EtherType::ARP` and `IpProtocol::IGMP` constants (shown by name in
     `onx packets stats`)
 

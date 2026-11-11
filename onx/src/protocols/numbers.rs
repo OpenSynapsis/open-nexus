@@ -85,6 +85,8 @@ impl fmt::Debug for EtherType {
 pub struct IpProtocol(u8);
 
 impl IpProtocol {
+    /// IPv6 Hop-by-Hop Options extension header
+    pub const IPV6_HOPOPT: IpProtocol = IpProtocol(0);
     /// Internet Control Message Protocol
     pub const ICMP: IpProtocol = IpProtocol(1);
     /// Internet Group Management Protocol
@@ -93,17 +95,30 @@ impl IpProtocol {
     pub const TCP: IpProtocol = IpProtocol(6);
     /// User Datagram Protocol
     pub const UDP: IpProtocol = IpProtocol(17);
+    /// IPv6 Routing extension header
+    pub const IPV6_ROUTE: IpProtocol = IpProtocol(43);
+    /// IPv6 Fragment extension header
+    pub const IPV6_FRAG: IpProtocol = IpProtocol(44);
     /// Internet Control Message Protocol version 6
     pub const ICMPV6: IpProtocol = IpProtocol(58);
+    /// IPv6 No Next Header: nothing follows
+    pub const IPV6_NONXT: IpProtocol = IpProtocol(59);
+    /// IPv6 Destination Options extension header
+    pub const IPV6_OPTS: IpProtocol = IpProtocol(60);
 
     /// Returns the name of a known IpProtocol
     fn name(self) -> Option<&'static str> {
         match self {
+            IpProtocol::IPV6_HOPOPT => Some("IPv6 Hop-by-Hop"),
             IpProtocol::ICMP => Some("ICMP"),
             IpProtocol::IGMP => Some("IGMP"),
             IpProtocol::TCP => Some("TCP"),
             IpProtocol::UDP => Some("UDP"),
+            IpProtocol::IPV6_ROUTE => Some("IPv6 Routing"),
+            IpProtocol::IPV6_FRAG => Some("IPv6 Fragment"),
             IpProtocol::ICMPV6 => Some("ICMPv6"),
+            IpProtocol::IPV6_NONXT => Some("IPv6 No Next Header"),
+            IpProtocol::IPV6_OPTS => Some("IPv6 Destination Options"),
             _ => None,
         }
     }
