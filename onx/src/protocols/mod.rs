@@ -5,7 +5,9 @@
 
 mod dissect;
 pub mod ethernet;
+pub mod fragment;
 pub mod header;
+pub mod ipv4;
 mod next;
 pub mod numbers;
 pub mod packet;
@@ -15,7 +17,9 @@ pub mod stop;
 
 // Re-export commonly used types
 pub use ethernet::{Ethernet, MacAddr};
+pub use fragment::Fragment;
 pub use header::{Header, HeaderKind};
+pub use ipv4::Ipv4;
 pub use numbers::EtherType;
 pub use numbers::IpProtocol;
 pub use packet::{Packet, MAX_DEPTH};

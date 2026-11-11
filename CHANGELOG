@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - `onx packets stats` (`onx p s`): decode every packet of a capture and print
     protocol statistics
   - `HeaderKind`, `Stop` and `LinkType` implement `PartialOrd` and `Ord`
+  - `Ipv4` header (`Header::Ipv4`) and `Fragment`, the position of an IP packet
+    in a fragmented datagram
 
 ### Fixed
   - `onx read` streams packets instead of loading the whole capture in memory
