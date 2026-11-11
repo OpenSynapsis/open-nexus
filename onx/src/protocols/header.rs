@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use crate::protocols::{ethernet::Ethernet, ipv4::Ipv4, Span};
+use crate::protocols::{ethernet::Ethernet, ipv4::Ipv4, ipv6::Ipv6, Span};
 
 /// A decoded header.
 ///
@@ -15,6 +15,7 @@ use crate::protocols::{ethernet::Ethernet, ipv4::Ipv4, Span};
 pub enum Header {
     Ethernet(Ethernet),
     Ipv4(Ipv4),
+    Ipv6(Ipv6),
 }
 
 impl Header {
@@ -23,6 +24,7 @@ impl Header {
         match self {
             Header::Ethernet(_) => HeaderKind::Ethernet,
             Header::Ipv4(_) => HeaderKind::Ipv4,
+            Header::Ipv6(_) => HeaderKind::Ipv6,
         }
     }
 
@@ -31,6 +33,7 @@ impl Header {
         match self {
             Header::Ethernet(ethernet) => ethernet.span,
             Header::Ipv4(ipv4) => ipv4.span,
+            Header::Ipv6(ipv6) => ipv6.span,
         }
     }
 }
@@ -65,7 +68,7 @@ impl fmt::Display for HeaderKind {
 
 #[cfg(test)]
 mod tests {
-    use std::net::Ipv4Addr;
+    use std::net::{Ipv4Addr, Ipv6Addr};
 
     use super::*;
     use crate::protocols::{ethernet::MacAddr, EtherType, Fragment, IpProtocol};
@@ -97,5 +100,20 @@ mod tests {
 
         assert_eq!(header.kind(), HeaderKind::Ipv4);
         assert_eq!(header.span(), Span::new(14, 20));
+    }
+
+    #[test]
+    fn kind_and_span_of_ipv6() {
+        let header = Header::Ipv6(Ipv6 {
+            destination: Ipv6Addr::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x4801),
+            source: Ipv6Addr::new(0xfe80, 0, 0, 0, 0, 0, 0, 0x4802),
+            next_header: IpProtocol::TCP,
+            payload_len: 100,
+            flow_label: 120,
+            span: Span::new(14, 40),
+        });
+
+        assert_eq!(header.kind(), HeaderKind::Ipv6);
+        assert_eq!(header.span(), Span::new(14, 40));
     }
 }

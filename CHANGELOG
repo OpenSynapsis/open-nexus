@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     in a fragmented datagram
   - `RawPacket::decode()` decodes IPv4 headers (options included in the span);
     a non-first fragment ends decoding normally, without a `Stop`
+  - `Ipv6` header (`Header::Ipv6`): the fixed header; extension headers will be
+    separate headers in the stack
   - `EtherType::ARP` and `IpProtocol::IGMP` constants (shown by name in
     `onx packets stats`)
 
