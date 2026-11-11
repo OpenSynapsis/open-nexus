@@ -14,7 +14,7 @@ use time::OffsetDateTime;
 
 use std::{
     fs::File,
-    io::{self, BufReader, Read},
+    io::{self, BufReader, Read, Seek},
     path::Path,
 };
 
@@ -284,18 +284,57 @@ impl<R: Read> PacketSource for AnyPacketSource<R> {
     }
 }
 
+/// Capture file formats recognized by their magic number
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CaptureFormat {
+    Pcap,
+    PcapNg,
+}
+
+impl CaptureFormat {
+    /// Recognize a format from the first 4 bytes of a file
+    fn detect(magic: [u8; 4]) -> Option<CaptureFormat> {
+        match magic {
+            // Little-endian, big-endian, then their nanosecond variants
+            [0xd4, 0xc3, 0xb2, 0xa1]
+            | [0xa1, 0xb2, 0xc3, 0xd4]
+            | [0x4d, 0x3c, 0xb2, 0xa1]
+            | [0xa1, 0xb2, 0x3c, 0x4d] => Some(CaptureFormat::Pcap),
+            // Section Header Block type, the same in both byte orders
+            [0x0a, 0x0d, 0x0d, 0x0a] => Some(CaptureFormat::PcapNg),
+            _ => None,
+        }
+    }
+}
+
 /// Auto-detect and open PCAP or PCAPNG file
+///
+/// # Errors
+///
+/// `PcapError::Io` if the file cannot be opened or read,
+/// `PcapError::UnsupportedFormat` if it is neither PCAP nor PCAPNG.
 pub fn read_capture_file<P: AsRef<Path>>(
     path: P,
 ) -> Result<AnyPacketSource<BufReader<File>>, PcapError> {
-    // Try PCAP first, then PCAPNG
+    // Open once: checking then reopening would report a missing file as an
+    // unsupported format, and the file could change between the two opens.
+    let mut file = File::open(path)?;
 
-    if PcapSource::is_pcap_file(&path) {
-        PcapSource::from_file(path).map(AnyPacketSource::Pcap)
-    } else if PcapNgSource::is_pcapng_file(&path) {
-        PcapNgSource::from_file(path).map(AnyPacketSource::PcapNg)
-    } else {
-        Err(PcapError::UnsupportedFormat)
+    let mut magic = [0u8; 4];
+    if let Err(error) = file.read_exact(&mut magic) {
+        return Err(match error.kind() {
+            // Shorter than any magic number: not a capture
+            io::ErrorKind::UnexpectedEof => PcapError::UnsupportedFormat,
+            _ => PcapError::Io(error),
+        });
+    }
+    file.rewind()?;
+
+    let reader = BufReader::new(file);
+    match CaptureFormat::detect(magic) {
+        Some(CaptureFormat::Pcap) => PcapSource::new(reader).map(AnyPacketSource::Pcap),
+        Some(CaptureFormat::PcapNg) => PcapNgSource::new(reader).map(AnyPacketSource::PcapNg),
+        None => Err(PcapError::UnsupportedFormat),
     }
 }
 
@@ -367,5 +406,43 @@ mod tests {
         assert!(packets.next().unwrap().is_ok());
         assert!(packets.next().unwrap().is_ok());
         assert!(matches!(packets.next(), Some(Err(PcapError::Truncated))));
+    }
+
+    #[test]
+    fn missing_file_is_an_io_error() {
+        let result = read_capture_file("does/not/exist.pcap");
+
+        assert!(
+            matches!(result, Err(PcapError::Io(ref e)) if e.kind() == io::ErrorKind::NotFound),
+            "expected a NotFound I/O error"
+        );
+    }
+
+    #[test]
+    fn detect_formats() {
+        assert_eq!(
+            CaptureFormat::detect([0xd4, 0xc3, 0xb2, 0xa1]),
+            Some(CaptureFormat::Pcap)
+        );
+        assert_eq!(
+            CaptureFormat::detect([0xa1, 0xb2, 0x3c, 0x4d]),
+            Some(CaptureFormat::Pcap)
+        );
+        assert_eq!(
+            CaptureFormat::detect([0x0a, 0x0d, 0x0d, 0x0a]),
+            Some(CaptureFormat::PcapNg)
+        );
+        assert_eq!(CaptureFormat::detect(*b"GIF8"), None);
+    }
+
+    #[test]
+    fn file_shorter_than_a_magic_number_is_unsupported() {
+        let path = std::env::temp_dir().join(format!("onx-short-{}.pcap", std::process::id()));
+        std::fs::write(&path, [0xd4, 0xc3]).unwrap();
+
+        let result = read_capture_file(&path);
+        std::fs::remove_file(&path).unwrap();
+
+        assert!(matches!(result, Err(PcapError::UnsupportedFormat)));
     }
 }
