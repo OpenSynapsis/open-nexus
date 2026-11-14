@@ -2,7 +2,12 @@
 
 use std::fmt;
 
-use crate::protocols::{ethernet::Ethernet, ipv4::Ipv4, ipv6::Ipv6, Span};
+use crate::protocols::{
+    ethernet::Ethernet,
+    ipv4::Ipv4,
+    ipv6::{Ipv6, Ipv6Fragment},
+    Span,
+};
 
 /// A decoded header.
 ///
@@ -16,6 +21,7 @@ pub enum Header {
     Ethernet(Ethernet),
     Ipv4(Ipv4),
     Ipv6(Ipv6),
+    Ipv6Fragment(Ipv6Fragment),
 }
 
 impl Header {
@@ -25,6 +31,7 @@ impl Header {
             Header::Ethernet(_) => HeaderKind::Ethernet,
             Header::Ipv4(_) => HeaderKind::Ipv4,
             Header::Ipv6(_) => HeaderKind::Ipv6,
+            Header::Ipv6Fragment(_) => HeaderKind::Ipv6Fragment,
         }
     }
 
@@ -34,6 +41,7 @@ impl Header {
             Header::Ethernet(ethernet) => ethernet.span,
             Header::Ipv4(ipv4) => ipv4.span,
             Header::Ipv6(ipv6) => ipv6.span,
+            Header::Ipv6Fragment(ipv6_fragment) => ipv6_fragment.span,
         }
     }
 }
@@ -45,6 +53,7 @@ pub enum HeaderKind {
     Ethernet,
     Ipv4,
     Ipv6,
+    Ipv6Fragment,
     Tcp,
     Udp,
     Icmpv4,
@@ -61,6 +70,7 @@ impl fmt::Display for HeaderKind {
             HeaderKind::Udp => "UDP",
             HeaderKind::Icmpv4 => "ICMPv4",
             HeaderKind::Icmpv6 => "ICMPv6",
+            HeaderKind::Ipv6Fragment => "IPv6 Fragment",
         };
         f.write_str(name)
     }
@@ -115,5 +125,18 @@ mod tests {
 
         assert_eq!(header.kind(), HeaderKind::Ipv6);
         assert_eq!(header.span(), Span::new(14, 40));
+    }
+
+    #[test]
+    fn kind_and_span_of_ipv6_fragment() {
+        let header = Header::Ipv6Fragment(Ipv6Fragment {
+            next_header: IpProtocol::TCP,
+            fragment: Fragment::new(0, true),
+            identification: 1200,
+            span: Span::new(54, 8),
+        });
+
+        assert_eq!(header.kind(), HeaderKind::Ipv6Fragment);
+        assert_eq!(header.span(), Span::new(54, 8));
     }
 }

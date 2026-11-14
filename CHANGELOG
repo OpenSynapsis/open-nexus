@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
     separate headers in the stack
   - `RawPacket::decode()` decodes the IPv6 fixed header; extension headers are
     reported as unsupported for now
+  - `Ipv6Fragment` header (`Header::Ipv6Fragment`, `HeaderKind::Ipv6Fragment`):
+    the IPv6 Fragment extension header
   - `IpProtocol` constants for the IPv6 extension headers (`IPV6_HOPOPT`,
     `IPV6_ROUTE`, `IPV6_FRAG`, `IPV6_OPTS`) and `IPV6_NONXT`
   - `EtherType::ARP` and `IpProtocol::IGMP` constants (shown by name in

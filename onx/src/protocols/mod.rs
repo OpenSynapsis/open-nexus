@@ -21,7 +21,7 @@ pub use ethernet::{Ethernet, MacAddr};
 pub use fragment::Fragment;
 pub use header::{Header, HeaderKind};
 pub use ipv4::Ipv4;
-pub use ipv6::Ipv6;
+pub use ipv6::{Ipv6, Ipv6Fragment};
 pub use numbers::EtherType;
 pub use numbers::IpProtocol;
 pub use packet::{Packet, MAX_DEPTH};

@@ -4,7 +4,7 @@ use std::net::Ipv6Addr;
 
 use etherparse::{err::ipv6::HeaderSliceError, Ipv6HeaderSlice};
 
-use crate::protocols::{next::Next, HeaderKind, IpProtocol, Span, Stop};
+use crate::protocols::{fragment::Fragment, next::Next, HeaderKind, IpProtocol, Span, Stop};
 
 /// IPv6 fixed header (40 bytes)
 ///
@@ -24,6 +24,23 @@ pub struct Ipv6 {
     pub payload_len: u16,
     /// Flow label (20 bits)
     pub flow_label: u32,
+    /// Position of the header in the raw packet
+    pub span: Span,
+}
+
+/// IPv6 Fragment extension header (8 bytes)
+///
+/// Carries the same information as the fragmentation fields of IPv4, with a
+/// 32-bit identification.
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Ipv6Fragment {
+    /// Header that follows in the first fragment
+    pub next_header: IpProtocol,
+    /// Position of the packet in the fragmented datagram
+    pub fragment: Fragment,
+    /// Identification of the datagram, shared by its fragments
+    pub identification: u32,
     /// Position of the header in the raw packet
     pub span: Span,
 }
