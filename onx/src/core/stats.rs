@@ -76,7 +76,7 @@ impl CaptureStats {
         if self.packet_count == 0 {
             0
         } else {
-            self.total_bytes / self.packet_count
+            self.total_bytes.checked_div(self.packet_count).unwrap_or(0)
         }
     }
 
